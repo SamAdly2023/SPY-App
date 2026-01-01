@@ -1,6 +1,28 @@
 import requests
+import whois
 from duckduckgo_search import DDGS
 from urllib.parse import urlparse
+
+def perform_whois_lookup(domain):
+    """
+    Performs a Whois lookup for a domain.
+    """
+    results = []
+    try:
+        w = whois.whois(domain)
+        if w.domain_name:
+            # Create a result card for the domain info
+            info = f"Registrar: {w.registrar}\nCreation Date: {w.creation_date}\nEmails: {w.emails}"
+            results.append({
+                "title": f"Whois: {domain}",
+                "link": f"https://who.is/whois/{domain}", # Link to external whois
+                "type": "Websites",
+                "image": "https://cdn-icons-png.flaticon.com/512/2065/2065064.png", # Globe icon
+                "details": str(w) # Store full details if needed
+            })
+    except Exception as e:
+        print(f"Error in Whois: {e}")
+    return results
 
 def perform_google_search(query, num_results=10):
     """
@@ -81,14 +103,20 @@ def run_osint_scan(query, depth):
     """
     results = []
     
-    # 1. Check if the query looks like a username (no spaces)
-    if " " not in query:
+    # 1. Check if the query looks like a domain
+    if "." in query and " " not in query:
+        print(f"Checking Whois for: {query}")
+        whois_results = perform_whois_lookup(query)
+        results.extend(whois_results)
+
+    # 2. Check if the query looks like a username (no spaces)
+    if " " not in query and "." not in query:
         print(f"Checking username: {query}")
         social_results = check_social_media(query)
         results.extend(social_results)
     
-    # 2. Perform Google Search
-    print(f"Searching Google for: {query}")
+    # 3. Perform Search
+    print(f"Searching Web for: {query}")
     # Map depth 1-5 to number of results (e.g., 1 page = 10 results)
     num_results = int(depth) * 5 
     google_results = perform_google_search(query, num_results)

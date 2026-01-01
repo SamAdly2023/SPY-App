@@ -1,11 +1,19 @@
 from flask import Flask, request, jsonify, render_template
 import osint_modules
+import db
 
 app = Flask(__name__, template_folder='.')
+
+# Initialize Database
+db.init_db()
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/history')
+def history():
+    return jsonify(db.get_history())
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -17,6 +25,10 @@ def search():
 
     # Call the function from our new module
     results = osint_modules.run_osint_scan(query, depth)
+    
+    # Save to history
+    db.add_history(query, len(results))
+    
     return jsonify(results)
 
 if __name__ == '__main__':

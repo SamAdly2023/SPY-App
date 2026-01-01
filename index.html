@@ -42,6 +42,11 @@ body { font-family: 'Rubik', sans-serif; background:#121212; color:#fff; }
         </div>
     </form>
 
+    <div class="d-flex justify-content-between mt-3">
+        <button class="btn btn-secondary" onclick="showHistory()"><i class="fa-solid fa-clock-rotate-left"></i> سجل البحث</button>
+        <button class="btn btn-success" onclick="exportCSV()"><i class="fa-solid fa-file-csv"></i> تصدير النتائج</button>
+    </div>
+
     <div id="resultMap"></div>
 
     <div class="mt-4 p-3 bg-dark rounded">
@@ -52,9 +57,26 @@ body { font-family: 'Rubik', sans-serif; background:#121212; color:#fff; }
 
 <div id="tooltip" class="tooltip-custom"></div>
 
+<!-- History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">سجل البحث</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <ul id="historyList" class="list-group list-group-flush"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <script>
 const tooltip = document.getElementById("tooltip");
+let currentData = [];
 
 document.getElementById("searchForm").onsubmit = async function(e){
     e.preventDefault();
@@ -64,9 +86,48 @@ document.getElementById("searchForm").onsubmit = async function(e){
 
     const res = await fetch("/search", { method:"POST", body:form });
     const data = await res.json();
+    currentData = data;
 
     renderResults(data);
     renderGraph(data, document.getElementById("queryInput").value);
+}
+
+async function showHistory(){
+    const res = await fetch("/history");
+    const history = await res.json();
+    const list = document.getElementById("historyList");
+    list.innerHTML = "";
+    history.forEach(h => {
+        const item = document.createElement("li");
+        item.className = "list-group-item bg-dark text-white border-secondary d-flex justify-content-between";
+        item.innerHTML = `<span>${h.query}</span> <span class="badge bg-secondary">${h.date}</span>`;
+        item.onclick = () => {
+            document.getElementById("queryInput").value = h.query;
+            const modal = bootstrap.Modal.getInstance(document.getElementById('historyModal'));
+            modal.hide();
+            document.getElementById("searchForm").dispatchEvent(new Event('submit'));
+        };
+        item.style.cursor = "pointer";
+        list.appendChild(item);
+    });
+    new bootstrap.Modal(document.getElementById('historyModal')).show();
+}
+
+function exportCSV(){
+    if(!currentData || currentData.length === 0) return alert("لا توجد نتائج للتصدير");
+    
+    let csvContent = "data:text/csv;charset=utf-8,Title,Link,Type\n";
+    currentData.forEach(row => {
+        csvContent += `"${row.title.replace(/"/g, '""')}","${row.link}","${row.type}"\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "osint_results.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 function renderResults(data){
