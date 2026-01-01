@@ -5,3 +5,4 @@ duckduckgo-search
 gunicorn
 python-whois
 dnspython
+paypalrestsdk
