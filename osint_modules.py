@@ -34,7 +34,8 @@ def perform_google_search(query, num_results=10):
     
     # Try Google Custom Search first
     api_key = os.environ.get("GOOGLE_SEARCH_API_KEY")
-    cx = os.environ.get("GOOGLE_SEARCH_CX")
+    # Use the provided CX as default if not in env
+    cx = os.environ.get("GOOGLE_SEARCH_CX", "452d685a5b79d4c2e")
     
     if api_key and cx:
         try:
