@@ -1,5 +1,6 @@
 import requests
 import whois
+import os
 from duckduckgo_search import DDGS
 from urllib.parse import urlparse
 
@@ -26,9 +27,49 @@ def perform_whois_lookup(domain):
 
 def perform_google_search(query, num_results=10):
     """
-    Performs a DuckDuckGo search and returns a list of results.
+    Performs a Google Custom Search and returns a list of results.
+    Requires GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_CX environment variables.
     """
     results = []
+    
+    # Try Google Custom Search first
+    api_key = os.environ.get("GOOGLE_SEARCH_API_KEY")
+    cx = os.environ.get("GOOGLE_SEARCH_CX")
+    
+    if api_key and cx:
+        try:
+            url = "https://www.googleapis.com/customsearch/v1"
+            params = {
+                'q': query,
+                'key': api_key,
+                'cx': cx,
+                'num': num_results
+            }
+            response = requests.get(url, params=params)
+            data = response.json()
+            
+            if 'items' in data:
+                for item in data['items']:
+                    image = ""
+                    if 'pagemap' in item and 'cse_image' in item['pagemap']:
+                        image = item['pagemap']['cse_image'][0].get('src', '')
+                        
+                    results.append({
+                        "title": item.get('title', 'No Title'),
+                        "link": item.get('link', ''),
+                        "snippet": item.get('snippet', ''),
+                        "type": "Websites",
+                        "image": image
+                    })
+                return results # Return immediately if successful
+            elif 'error' in data:
+                print(f"Google API Error: {data['error']}")
+                
+        except Exception as e:
+            print(f"Error in Google Search: {e}")
+
+    # Fallback to DuckDuckGo if Google fails or keys are missing
+    print("Falling back to DuckDuckGo...")
     try:
         with DDGS() as ddgs:
             # ddgs.text() returns a generator of results
@@ -42,7 +83,7 @@ def perform_google_search(query, num_results=10):
                     "image": ""
                 })
     except Exception as e:
-        print(f"Error in Search: {e}")
+        print(f"Error in DuckDuckGo Search: {e}")
     return results
 
 def check_social_media(username):
