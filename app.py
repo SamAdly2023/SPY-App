@@ -1,13 +1,22 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from authlib.integrations.flask_client import OAuth
 import osint_modules
 import db
 import paypalrestsdk
+import os
 
 app = Flask(__name__, template_folder='.')
+app.secret_key = "super_secret_key_for_dev_only" # Static key to prevent session invalidation on restart
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # Allow OAuth over HTTP for dev
+
+# Configuration
+GOOGLE_CLIENT_ID = "241819621736-ph4v79l869g1p5mnhsoiaagei8fn2fef.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
 
 # Configure PayPal
 paypalrestsdk.configure({
-  "mode": "sandbox", # Change to "live" for production
+  "mode": "sandbox", 
   "client_id": "AarwkYK4lzBjwzF7OCgJeoRBnGAZehBAsNrEyrQZSdzu7yyPH3P7qEm0qtm-VNj_SvYFPpKA9PjZqO2G",
   "client_secret": "EIrQs5idryj4M61B1A2sA2EUAEasToLqgB7GiEAULjEhh6Ncj35X75v6DgpIgieisDuiXkHXqs_1oWyF"
 })
@@ -15,11 +24,93 @@ paypalrestsdk.configure({
 # Initialize Database
 db.init_db()
 
+# Setup Login Manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# Setup OAuth
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'},
+)
+
+class User(UserMixin):
+    def __init__(self, user_data):
+        self.id = user_data['id']
+        self.name = user_data['name']
+        self.email = user_data['email']
+        self.profile_pic = user_data['profile_pic']
+        self.credits = user_data['credits']
+
+@login_manager.user_loader
+def load_user(user_id):
+    user_data = db.get_user(user_id)
+    if user_data:
+        return User(user_data)
+    return None
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return render_template('login.html')
+
+@app.route('/login')
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return render_template('login.html')
+
+@app.route('/login/google')
+def google_login():
+    redirect_uri = url_for('google_authorize', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/login/google/callback')
+def google_authorize():
+    token = google.authorize_access_token()
+    user_info = google.get('https://www.googleapis.com/oauth2/v3/userinfo').json()
+    user_id = db.create_or_update_user(user_info)
+    user = load_user(user_id)
+    login_user(user)
+    return redirect(url_for('dashboard'))
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html', user=current_user)
+
+@app.route('/history_page')
+@login_required
+def history_page():
+    return render_template('history.html', user=current_user)
+
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', user=current_user)
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html', user=current_user if current_user.is_authenticated else None)
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html', user=current_user if current_user.is_authenticated else None)
 
 @app.route('/create_payment', methods=['POST'])
+@login_required
 def create_payment():
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -27,14 +118,14 @@ def create_payment():
             "payment_method": "paypal"
         },
         "redirect_urls": {
-            "return_url": "http://localhost:5000/payment/execute",
-            "cancel_url": "http://localhost:5000/payment/cancel"
+            "return_url": url_for('execute_payment', _external=True),
+            "cancel_url": url_for('dashboard', _external=True)
         },
         "transactions": [{
             "item_list": {
                 "items": [{
-                    "name": "OSINT Export",
-                    "sku": "export_001",
+                    "name": "100 Credits",
+                    "sku": "credits_100",
                     "price": "10.00",
                     "currency": "USD",
                     "quantity": 1
@@ -44,7 +135,7 @@ def create_payment():
                 "total": "10.00",
                 "currency": "USD"
             },
-            "description": "Export OSINT search results."
+            "description": "Purchase 100 OSINT Credits."
         }]
     })
 
@@ -53,35 +144,42 @@ def create_payment():
     else:
         return jsonify({"error": payment.error}), 500
 
-@app.route('/execute_payment', methods=['POST'])
+@app.route('/execute_payment', methods=['GET'])
+@login_required
 def execute_payment():
-    payment_id = request.json.get('paymentID')
-    payer_id = request.json.get('payerID')
+    payment_id = request.args.get('paymentId')
+    payer_id = request.args.get('PayerID')
 
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        return jsonify({"status": "success"})
+        # Add credits to user
+        db.update_credits(current_user.id, 100)
+        return redirect(url_for('dashboard'))
     else:
         return jsonify({"error": payment.error}), 500
 
 @app.route('/history')
-def history():
-    return jsonify(db.get_history())
+@login_required
+def history_api():
+    return jsonify(db.get_history(current_user.id))
 
 @app.route('/search', methods=['POST'])
+@login_required
 def search():
+    if current_user.credits <= 0:
+        return jsonify({"error": "Insufficient credits"}), 403
+
     query = request.form.get('query')
     depth = request.form.get('depth', 2)
     
     if not query:
         return jsonify([])
 
-    # Call the function from our new module
     results = osint_modules.run_osint_scan(query, depth)
     
-    # Save to history
-    db.add_history(query, len(results))
+    db.add_history(current_user.id, query, len(results))
+    db.update_credits(current_user.id, -1) # Deduct 1 credit per search
     
     return jsonify(results)
 

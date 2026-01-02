@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4 text-uppercase"><i class="fa-solid fa-clock-rotate-left me-2"></i> Search History</h2>
+    
+    <div class="card-custom">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover" style="background: transparent;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #ff00cc;">
+                        <th style="color: #00d2ff; font-family: 'Orbitron', sans-serif;">Date</th>
+                        <th style="color: #00d2ff; font-family: 'Orbitron', sans-serif;">Query</th>
+                        <th style="color: #00d2ff; font-family: 'Orbitron', sans-serif;">Results Found</th>
+                        <th style="color: #00d2ff; font-family: 'Orbitron', sans-serif;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="4" class="text-center">Loading history...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadHistory() {
+    try {
+        const response = await fetch('/history');
+        const data = await response.json();
+        
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = '';
+        
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No history found.</td></tr>';
+            return;
+        }
+        
+        data.forEach(item => {
+            const row = `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td>${item.date}</td>
+                    <td style="color: #ff00cc; font-weight: bold;">${item.query}</td>
+                    <td><span class="badge bg-secondary">${item.result_count}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" onclick="rerunSearch('${item.query}')" style="border-color: #00d2ff; color: #00d2ff;">
+                            <i class="fa-solid fa-rotate-right"></i> Rerun
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Error loading history:', error);
+    }
+}
+
+function rerunSearch(query) {
+    window.location.href = "{{ url_for('dashboard') }}?q=" + encodeURIComponent(query);
+}
+
+document.addEventListener('DOMContentLoaded', loadHistory);
+</script>
+{% endblock %}

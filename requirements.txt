@@ -6,3 +6,5 @@ gunicorn
 python-whois
 dnspython
 paypalrestsdk
+authlib
+flask-login

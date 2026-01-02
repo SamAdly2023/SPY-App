@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/vis-network/styles/vis-network.min.css">
+<style>
+    #resultMap { 
+        border: var(--glass-border); 
+        height: 650px; 
+        margin-top: 20px; 
+        background: rgba(0,0,0,0.2); 
+        border-radius: 16px; 
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    #results { 
+        background: rgba(0,0,0,0.2); 
+        padding: 15px; 
+        border-radius: 10px; 
+        max-height: 400px; 
+        overflow: auto; 
+        color: #eee; 
+        font-size: 14px; 
+    }
+    .tooltip-custom { 
+        position: absolute; 
+        background: rgba(15, 12, 41, 0.95); 
+        color: #fff; 
+        padding: 15px; 
+        border-radius: 12px; 
+        max-width: 350px; 
+        font-size: 14px; 
+        display: none; 
+        z-index: 1000; 
+        box-shadow: 0 0 20px rgba(51, 51, 255, 0.3);
+        border: 1px solid #3333ff;
+        backdrop-filter: blur(5px);
+    }
+    .result-card { 
+        background: rgba(255,255,255,0.03); 
+        padding: 15px; 
+        margin-bottom: 15px; 
+        border-radius: 12px; 
+        display: flex; 
+        align-items: center; 
+        gap: 15px; 
+        border: 1px solid rgba(255,255,255,0.05); 
+        transition: 0.3s;
+    }
+    .result-card:hover {
+        background: rgba(255,255,255,0.07);
+        border-color: rgba(51, 51, 255, 0.3);
+    }
+    .result-card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #3333ff; }
+    .result-card .info { flex: 1; }
+    .result-card .info .title { font-weight: bold; color: #ff00cc; font-family: "Orbitron", sans-serif; letter-spacing: 0.5px; }
+    .result-card .info .link { font-size: 12px; color: #00d2ff; word-break: break-all; text-decoration: none; }
+    .result-card .info .link:hover { text-decoration: underline; }
+    .result-card .info .type { font-size: 11px; color: #fff; background: linear-gradient(45deg, #3333ff, #00d2ff); padding: 3px 8px; border-radius: 20px; margin-top: 6px; display: inline-block; font-weight: bold; }
+    
+    .nav-tabs { border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .nav-link { color: #b0b0b0; border: none; font-family: "Orbitron", sans-serif; letter-spacing: 1px; }
+    .nav-link:hover { color: #fff; }
+    .nav-link.active { 
+        color: #fff !important; 
+        background: transparent !important; 
+        border-bottom: 3px solid #ff00cc !important; 
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4 text-uppercase"><i class="fa-solid fa-gauge-high me-2"></i> Dashboard</h2>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card-custom">
+                <form id="searchForm">
+                    <div class="input-group mb-3">
+                        <input type="text" id="queryInput" class="form-control" placeholder="Enter person, username, or company name..." required>
+                        <button class="btn btn-primary-custom" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <label class="text-muted">Search Depth:</label>
+                        <select id="depthSelect" class="form-select" style="width: auto;">
+                            <option value="1">1 Page</option>
+                            <option value="2" selected>2 Pages</option>
+                            <option value="3">3 Pages</option>
+                            <option value="5">5 Pages</option>
+                        </select>
+                        <span class="text-info ms-auto"><i class="fa-solid fa-coins"></i> Cost: 1 Credit</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="graph-tab" data-bs-toggle="tab" data-bs-target="#graph" type="button" role="tab">Graph View</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab">List View</button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="graph" role="tabpanel">
+            <div id="resultMap"></div>
+        </div>
+        <div class="tab-pane fade" id="list" role="tabpanel">
+            <div class="card-custom">
+                <h4 class="mb-3"><i class="fa-solid fa-list"></i> Raw Results</h4>
+                <div id="results"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div id="tooltip" class="tooltip-custom"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script>
+const tooltip = document.getElementById("tooltip");
+let currentData = [];
+
+document.getElementById("searchForm").onsubmit = async function(e){
+    e.preventDefault();
+    
+    const query = document.getElementById("queryInput").value;
+    const depth = document.getElementById("depthSelect").value;
+    
+    // Show loading state
+    const btn = this.querySelector("button");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "<i class=\"fa-solid fa-spinner fa-spin\"></i> Searching...";
+    btn.disabled = true;
+    
+    let form = new FormData();
+    form.append("query", query);
+    form.append("depth", depth);
+
+    try {
+        let response = await fetch("/search", { method: "POST", body: form });
+        
+        if (response.status === 403) {
+            alert("Insufficient credits! Please top up in your profile.");
+            window.location.href = "{{ url_for("profile") }}";
+            return;
+        }
+        
+        let data = await response.json();
+        currentData = data;
+        
+        renderGraph(data);
+        renderList(data);
+        
+    } catch (error) {
+        console.error("Error:", error);
+        alert("An error occurred during search.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+
+function renderList(data) {
+    let html = "";
+    data.forEach(item => {
+        html += `
+        <div class="result-card">
+            <div class="info">
+                <div class="title">${item.title}</div>
+                <a href="${item.link}" target="_blank" class="link">${item.link}</a>
+                <div class="type">${item.type}</div>
+                <p class="mb-0 text-muted small mt-2">${item.snippet || ""}</p>
+            </div>
+        </div>`;
+    });
+    document.getElementById("results").innerHTML = html || "<p class=\"text-center text-muted\">No results found.</p>";
+}
+
+function renderGraph(data) {
+    let nodes = new vis.DataSet([{ 
+        id: 0, 
+        label: document.getElementById("queryInput").value, 
+        color: { background: "#ff00cc", border: "#fff" }, 
+        size: 40,
+        font: { color: "#fff", size: 16, face: "Orbitron" },
+        shadow: { enabled: true, color: "rgba(255,0,204,0.5)", size: 10 }
+    }]);
+    let edges = new vis.DataSet([]);
+
+    data.forEach((item, index) => {
+        let id = index + 1;
+        nodes.add({ 
+            id: id, 
+            label: item.title.substring(0, 15) + "...", 
+            title: `<b>${item.title}</b><br>${item.snippet || ""}`, 
+            shape: "dot", 
+            color: { background: "#00d2ff", border: "#fff" },
+            size: 20,
+            font: { color: "#b0b0b0", size: 12 }
+        });
+        edges.add({ from: 0, to: id, color: { color: "rgba(255,255,255,0.2)" } });
+    });
+
+    let container = document.getElementById("resultMap");
+    let networkData = { nodes: nodes, edges: edges };
+    let options = {
+        nodes: { borderWidth: 2, shadow: true },
+        physics: { 
+            stabilization: false,
+            barnesHut: { gravitationalConstant: -2000, springConstant: 0.04, springLength: 95 }
+        },
+        interaction: { hover: true, tooltipDelay: 200 }
+    };
+    new vis.Network(container, networkData, options);
+}
+</script>
+{% endblock %}

@@ -37,6 +37,7 @@ def perform_google_search(query, num_results=10):
                 results.append({
                     "title": r.get('title', 'No Title'),
                     "link": r.get('href', ''),
+                    "snippet": r.get('body', ''),
                     "type": "Websites", # Default type
                     "image": ""
                 })
