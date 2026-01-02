@@ -471,7 +471,8 @@ function showPopup(x, y, title, link) {
         popup = document.createElement("div");
         popup.id = "graphPopup";
         popup.style.position = "fixed";
-        popup.style.background = "rgba(15, 20, 35, 0.95)";
+        // Semi-transparent background (50% opacity) as requested
+        popup.style.background = "rgba(15, 20, 35, 0.50)";
         popup.style.backdropFilter = "blur(10px)";
         popup.style.border = "1px solid rgba(255, 255, 255, 0.2)";
         popup.style.padding = "15px";
@@ -487,9 +488,9 @@ function showPopup(x, y, title, link) {
     const safeLink = link.replace(/'/g, "\\'");
     
     popup.innerHTML = `
-        <div style="margin-bottom: 10px; font-weight: bold; color: #ffc107;">${title}</div>
+        <div style="margin-bottom: 10px; font-weight: bold; color: #ffffff;">${title}</div>
         <div style="margin-bottom: 10px; font-size: 12px; word-break: break-all;">
-            <a href="${link}" target="_blank" style="color: #6cf; text-decoration: none; border-bottom: 1px dotted #6cf;">${link}</a>
+            <a href="${link}" target="_blank" style="color: #ffffff; text-decoration: underline;">${link}</a>
         </div>
         <div style="display: flex; gap: 10px;">
             <button onclick="window.open('${safeLink}', '_blank')" class="btn btn-sm btn-primary" style="font-size: 12px;">Open</button>

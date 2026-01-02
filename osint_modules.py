@@ -172,6 +172,11 @@ def run_osint_scan(query, depth):
     """
     results = []
     
+    # Ensure query is treated as an exact phrase if it contains spaces, 
+    # or just wrap it in quotes to be specific as requested.
+    # This helps in getting consistent results.
+    quoted_query = f'"{query}"'
+    
     # 1. Check if the query looks like a domain
     if "." in query and " " not in query:
         print(f"Checking Whois for: {query}")
@@ -185,26 +190,27 @@ def run_osint_scan(query, depth):
         results.extend(social_results)
     
     # 3. Perform General Search
-    print(f"Searching Web for: {query}")
+    print(f"Searching Web for: {quoted_query}")
     num_results = int(depth) * 5 
-    google_results = perform_google_search(query, num_results)
+    # Use quoted query for exact match
+    google_results = perform_google_search(quoted_query, num_results)
     for res in google_results:
         res['type'] = categorize_url(res['link'])
         results.append(res)
 
     # 4. Perform Targeted Social Search (Search Engine Dorking)
     # This finds profiles even if the username check failed or if it's a full name
-    print(f"Searching Social Media for: {query}")
+    print(f"Searching Social Media for: {quoted_query}")
     
     # Split into groups to ensure diversity in results and better coverage
-    # We format the dork with the query
+    # We format the dork with the quoted query
     social_dorks = [
-        f'site:linkedin.com "{query}"',
-        f'site:facebook.com OR site:instagram.com "{query}"',
-        f'site:twitter.com OR site:x.com OR site:tiktok.com OR site:youtube.com "{query}"',
-        f'site:pinterest.com OR site:reddit.com OR site:t.me "{query}"',
-        f'site:github.com OR site:gitlab.com OR site:stackoverflow.com "{query}"', # Dev sites
-        f'site:pastebin.com OR site:ghostbin.com OR intitle:"index of" "{query}"' # Leaks/Files
+        f'site:linkedin.com {quoted_query}',
+        f'site:facebook.com OR site:instagram.com {quoted_query}',
+        f'site:twitter.com OR site:x.com OR site:tiktok.com OR site:youtube.com {quoted_query}',
+        f'site:pinterest.com OR site:reddit.com OR site:t.me {quoted_query}',
+        f'site:github.com OR site:gitlab.com OR site:stackoverflow.com {quoted_query}', # Dev sites
+        f'site:pastebin.com OR site:ghostbin.com OR intitle:"index of" {quoted_query}' # Leaks/Files
     ]
 
     for dork in social_dorks:
