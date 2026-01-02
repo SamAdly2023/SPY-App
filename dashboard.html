@@ -100,7 +100,7 @@
                         <button class="btn btn-primary-custom" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
                     </div>
                     <div class="d-flex align-items-center gap-3 flex-wrap">
-                        <label class="text-muted">Search Depth:</label>
+                        <label class="text-white">Search Depth:</label>
                         <select id="depthSelect" class="form-select" style="width: auto;">
                             <option value="1">1 Page</option>
                             <option value="2" selected>2 Pages</option>
@@ -422,21 +422,75 @@ function renderGraph(data) {
         interaction: { hover: true, zoomView: true, dragView: true, tooltipDelay: 200 }
     });
 
-    network.on("hoverNode", function(params) {
-        // Tooltip handling is built-in with 'title' property, but we can customize if needed
-        // The original code used a custom tooltip div, but vis.js has built-in support which is cleaner.
-        // However, to match original functionality exactly:
-        /*
-        const node = network.body.data.nodes.get(params.node);
-        if(node.title && !node.title.includes("<br>")) { // Only for simple titles
-             tooltip.innerHTML = node.title;
-             tooltip.style.display = "block";
-             tooltip.style.left = (params.event.pageX + 10) + "px";
-             tooltip.style.top  = (params.event.pageY + 10) + "px";
+    network.on("click", function(params) {
+        if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            const node = nodes.get(nodeId);
+            
+            // Check if it's a result node (has a link in title or custom data)
+            // Our result nodes have titles like "<b>Title</b><br>Link<br>Type: ..."
+            // We can parse the title or better yet, store data in the node object itself.
+            // Let's check if the node has a 'title' property that contains HTML
+            
+            if (node.title && node.title.includes("<br>")) {
+                // Extract info from title HTML or use a cleaner way if we stored data
+                // Since we didn't store raw data in the node, let's parse the title HTML
+                // Format: <b>Title</b><br>Link<br>Type: Type
+                
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = node.title;
+                const title = tempDiv.querySelector("b") ? tempDiv.querySelector("b").innerText : "Result";
+                // The link is the text after the first <br>
+                const textContent = tempDiv.innerText;
+                const lines = textContent.split("\n");
+                const link = lines[1] || ""; 
+                
+                showPopup(params.event.srcEvent.clientX, params.event.srcEvent.clientY, title, link);
+            }
+        } else {
+            hidePopup();
         }
-        */
     });
+    
     // network.on("blurNode", () => tooltip.style.display = "none");
+}
+
+function showPopup(x, y, title, link) {
+    let popup = document.getElementById("graphPopup");
+    if (!popup) {
+        popup = document.createElement("div");
+        popup.id = "graphPopup";
+        popup.style.position = "fixed";
+        popup.style.background = "rgba(15, 20, 35, 0.95)";
+        popup.style.backdropFilter = "blur(10px)";
+        popup.style.border = "1px solid rgba(255, 255, 255, 0.2)";
+        popup.style.padding = "15px";
+        popup.style.borderRadius = "12px";
+        popup.style.zIndex = "10000";
+        popup.style.color = "#fff";
+        popup.style.boxShadow = "0 10px 30px rgba(0,0,0,0.5)";
+        popup.style.maxWidth = "300px";
+        document.body.appendChild(popup);
+    }
+    
+    popup.innerHTML = `
+        <div style="margin-bottom: 10px; font-weight: bold; color: #ffc107;">${title}</div>
+        <div style="margin-bottom: 10px; font-size: 12px; word-break: break-all; color: #6cf;">${link}</div>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="window.open('${link}', '_blank')" class="btn btn-sm btn-primary" style="font-size: 12px;">Open</button>
+            <button onclick="navigator.clipboard.writeText('${link}'); this.innerText='Copied!'" class="btn btn-sm btn-outline-light" style="font-size: 12px;">Copy</button>
+            <button onclick="document.getElementById('graphPopup').style.display='none'" class="btn btn-sm btn-secondary" style="font-size: 12px;">Close</button>
+        </div>
+    `;
+    
+    popup.style.left = x + "px";
+    popup.style.top = y + "px";
+    popup.style.display = "block";
+}
+
+function hidePopup() {
+    const popup = document.getElementById("graphPopup");
+    if (popup) popup.style.display = "none";
 }
 </script>
 {% endblock %}
