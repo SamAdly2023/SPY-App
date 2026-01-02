@@ -46,6 +46,11 @@ class User(UserMixin):
         self.email = user_data['email']
         self.profile_pic = user_data['profile_pic']
         self.credits = user_data['credits']
+        self.role = user_data.get('role', 'user')
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -100,6 +105,28 @@ def history_page():
 @login_required
 def profile():
     return render_template('profile.html', user=current_user)
+
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    if not current_user.is_admin:
+        return redirect(url_for('dashboard'))
+    
+    users = db.get_all_users()
+    history = db.get_all_history()
+    return render_template('admin.html', user=current_user, users=users, history=history)
+
+@app.route('/admin/add_credits', methods=['POST'])
+@login_required
+def admin_add_credits():
+    if not current_user.is_admin:
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    user_id = request.form.get('user_id')
+    amount = int(request.form.get('amount'))
+    
+    db.update_credits(user_id, amount)
+    return jsonify({"success": True})
 
 @app.route('/terms')
 def terms():

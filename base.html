@@ -219,6 +219,11 @@
         <a href="{{ url_for("profile") }}" class="{{ "active" if request.endpoint == "profile" else "" }}">
             <i class="fa-solid fa-id-card-clip"></i> Profile & Credits
         </a>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for("admin_dashboard") }}" class="{{ "active" if request.endpoint == "admin_dashboard" else "" }}">
+            <i class="fa-solid fa-user-shield"></i> Admin Dashboard
+        </a>
+        {% endif %}
         <a href="{{ url_for("terms") }}" class="{{ "active" if request.endpoint == "terms" else "" }}">
             <i class="fa-solid fa-file-contract"></i> Terms of Use
         </a>

@@ -13,7 +13,8 @@ def init_db():
                   name TEXT, 
                   email TEXT, 
                   profile_pic TEXT,
-                  credits INTEGER DEFAULT 10)''')
+                  credits INTEGER DEFAULT 10,
+                  role TEXT DEFAULT 'user')''')
                   
     # History table
     c.execute('''CREATE TABLE IF NOT EXISTS history
@@ -24,7 +25,12 @@ def init_db():
                   result_count INTEGER,
                   FOREIGN KEY(user_id) REFERENCES users(id))''')
                   
-    # Check if user_id exists in history (migration hack for existing db)
+    # Migrations
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+    except:
+        pass
+
     try:
         c.execute("SELECT user_id FROM history LIMIT 1")
     except sqlite3.OperationalError:
@@ -44,14 +50,26 @@ def create_or_update_user(user_info):
     c.execute("SELECT * FROM users WHERE id = ?", (user_info['sub'],))
     user = c.fetchone()
     
+    # Determine role and credits
+    role = 'user'
+    credits = 10
+    if user_info['email'] == 'samadly728@gmail.com':
+        role = 'admin'
+        credits = 999999
+    
     if user:
         # Update info
-        c.execute("UPDATE users SET name = ?, email = ?, profile_pic = ? WHERE id = ?",
+        # If it's the admin, ensure they keep admin role and high credits
+        if user_info['email'] == 'samadly728@gmail.com':
+             c.execute("UPDATE users SET name = ?, email = ?, profile_pic = ?, role = ?, credits = ? WHERE id = ?",
+                  (user_info['name'], user_info['email'], user_info['picture'], role, credits, user_info['sub']))
+        else:
+             c.execute("UPDATE users SET name = ?, email = ?, profile_pic = ? WHERE id = ?",
                   (user_info['name'], user_info['email'], user_info['picture'], user_info['sub']))
     else:
         # Create new user
-        c.execute("INSERT INTO users (id, name, email, profile_pic, credits) VALUES (?, ?, ?, ?, ?)",
-                  (user_info['sub'], user_info['name'], user_info['email'], user_info['picture'], 10)) # Default 10 credits
+        c.execute("INSERT INTO users (id, name, email, profile_pic, credits, role) VALUES (?, ?, ?, ?, ?, ?)",
+                  (user_info['sub'], user_info['name'], user_info['email'], user_info['picture'], credits, role))
     
     conn.commit()
     conn.close()
@@ -90,3 +108,26 @@ def update_credits(user_id, amount):
     c.execute("UPDATE users SET credits = credits + ? WHERE id = ?", (amount, user_id))
     conn.commit()
     conn.close()
+
+def get_all_users():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM users")
+    rows = c.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def get_all_history():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('''
+        SELECT history.*, users.name as user_name, users.email as user_email 
+        FROM history 
+        JOIN users ON history.user_id = users.id 
+        ORDER BY history.id DESC
+    ''')
+    rows = c.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
