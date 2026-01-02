@@ -99,7 +99,25 @@ def check_social_media(username):
         "Reddit": "https://www.reddit.com/user/{}",
         "TikTok": "https://www.tiktok.com/@{}",
         "Medium": "https://medium.com/@{}",
-        "Pinterest": "https://www.pinterest.com/{}"
+        "Pinterest": "https://www.pinterest.com/{}",
+        "LinkedIn": "https://www.linkedin.com/in/{}",
+        "SoundCloud": "https://soundcloud.com/{}",
+        "Spotify": "https://open.spotify.com/user/{}",
+        "Vimeo": "https://vimeo.com/{}",
+        "Behance": "https://www.behance.net/{}",
+        "Dribbble": "https://dribbble.com/{}",
+        "Flickr": "https://www.flickr.com/people/{}",
+        "Steam": "https://steamcommunity.com/id/{}",
+        "Twitch": "https://www.twitch.tv/{}",
+        "Telegram": "https://t.me/{}",
+        "Patreon": "https://www.patreon.com/{}",
+        "About.me": "https://about.me/{}",
+        "Gravatar": "https://en.gravatar.com/{}",
+        "SlideShare": "https://www.slideshare.net/{}",
+        "DeviantArt": "https://www.deviantart.com/{}",
+        "Wattpad": "https://www.wattpad.com/user/{}",
+        "ReverbNation": "https://www.reverbnation.com/{}",
+        "Gumroad": "https://gumroad.com/{}",
     }
     
     found_accounts = []
@@ -138,6 +156,14 @@ def categorize_url(url):
     if "linkedin.com" in domain: return "LinkedIn"
     if "youtube.com" in domain: return "YouTube"
     if "github.com" in domain: return "GitHub"
+    if "reddit.com" in domain: return "Reddit"
+    if "tiktok.com" in domain: return "TikTok"
+    if "pinterest.com" in domain: return "Pinterest"
+    if "t.me" in domain or "telegram.org" in domain: return "Telegram"
+    if "medium.com" in domain: return "Medium"
+    if "stackoverflow.com" in domain: return "StackOverflow"
+    if "whatsapp.com" in domain: return "WhatsApp"
+    if "pdf" in url.lower(): return "Documents"
     return "Websites"
 
 def run_osint_scan(query, depth):
@@ -158,15 +184,33 @@ def run_osint_scan(query, depth):
         social_results = check_social_media(query)
         results.extend(social_results)
     
-    # 3. Perform Search
+    # 3. Perform General Search
     print(f"Searching Web for: {query}")
-    # Map depth 1-5 to number of results (e.g., 1 page = 10 results)
     num_results = int(depth) * 5 
     google_results = perform_google_search(query, num_results)
-    
-    # Post-process Google results to fix types
     for res in google_results:
         res['type'] = categorize_url(res['link'])
         results.append(res)
+
+    # 4. Perform Targeted Social Search (Search Engine Dorking)
+    # This finds profiles even if the username check failed or if it's a full name
+    print(f"Searching Social Media for: {query}")
+    social_dork = f'site:linkedin.com OR site:facebook.com OR site:twitter.com OR site:instagram.com OR site:tiktok.com OR site:youtube.com "{query}"'
+    social_search_results = perform_google_search(social_dork, 10)
+    for res in social_search_results:
+        res['type'] = categorize_url(res['link'])
+        # Avoid duplicates
+        if not any(r['link'] == res['link'] for r in results):
+            results.append(res)
+
+    # 5. Perform Document/File Search
+    print(f"Searching Documents for: {query}")
+    doc_dork = f'filetype:pdf OR filetype:docx OR filetype:xlsx OR filetype:pptx "{query}"'
+    doc_results = perform_google_search(doc_dork, 5)
+    for res in doc_results:
+        res['type'] = "Documents"
+        res['image'] = "https://cdn-icons-png.flaticon.com/512/337/337946.png" # Document icon
+        if not any(r['link'] == res['link'] for r in results):
+            results.append(res)
         
     return results
