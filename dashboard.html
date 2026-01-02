@@ -100,14 +100,13 @@
                         <button class="btn btn-primary-custom" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
                     </div>
                     <div class="d-flex align-items-center gap-3 flex-wrap">
-                        <label class="text-white">Search Depth:</label>
-                        <select id="depthSelect" class="form-select" style="width: auto;">
-                            <option value="1">1 Page</option>
-                            <option value="2" selected>2 Pages</option>
-                            <option value="3">3 Pages</option>
-                            <option value="5">5 Pages</option>
+                        <label class="text-white">Search Level:</label>
+                        <select id="levelSelect" class="form-select" style="width: auto;" onchange="updateCost()">
+                            <option value="surface" selected>Surface (1 Credit)</option>
+                            <option value="deep">Deep (3 Credits)</option>
+                            <option value="extreme">Extreme (5 Credits)</option>
                         </select>
-                        <span class="text-info ms-auto"><i class="fa-solid fa-coins"></i> Cost: 1 Credit</span>
+                        <span id="costDisplay" class="text-info ms-auto"><i class="fa-solid fa-coins"></i> Cost: 1 Credit</span>
                     </div>
                 </form>
             </div>
@@ -225,11 +224,18 @@
 const tooltip = document.getElementById("tooltip");
 let currentData = [];
 
+function updateCost() {
+    const level = document.getElementById("levelSelect").value;
+    const costs = { "surface": 1, "deep": 3, "extreme": 5 };
+    const cost = costs[level] || 1;
+    document.getElementById("costDisplay").innerHTML = `<i class="fa-solid fa-coins"></i> Cost: ${cost} Credit${cost > 1 ? 's' : ''}`;
+}
+
 document.getElementById("searchForm").onsubmit = async function(e){
     e.preventDefault();
     
     const query = document.getElementById("queryInput").value;
-    const depth = document.getElementById("depthSelect").value;
+    const level = document.getElementById("levelSelect").value;
     
     // Show loading state
     const btn = this.querySelector("button");
@@ -239,7 +245,7 @@ document.getElementById("searchForm").onsubmit = async function(e){
     
     let form = new FormData();
     form.append("query", query);
-    form.append("depth", depth);
+    form.append("level", level);
 
     try {
         let response = await fetch("/search", { method: "POST", body: form });
@@ -410,7 +416,7 @@ function renderGraph(data) {
                 shape: "circularImage",
                 image: result.image || icon,
                 font: { color: "#ccc", size: 10 },
-                title: `<b>${result.title}</b><br>${result.link}<br>Type: ${result.type}`,
+                title: `Title: ${result.title}\nLink: ${result.link}\nType: ${result.type}`, // Plain text for hover tooltip
                 size: 20,
                 borderWidth: 2,
                 color: { border: color, background: "#1e1e1e" },
