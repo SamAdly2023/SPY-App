@@ -172,62 +172,74 @@ def run_osint_scan(query, depth):
     """
     results = []
     
-    # Ensure query is treated as an exact phrase if it contains spaces, 
-    # or just wrap it in quotes to be specific as requested.
-    # This helps in getting consistent results.
-    quoted_query = f'"{query}"'
+    # Check for Google Search Operators (Advanced Mode)
+    # Ref: https://support.google.com/websearch/answer/2466433?hl=en
+    # If the user is using operators, we trust their query and don't wrap it in quotes.
+    advanced_operators = ['site:', 'intitle:', 'inurl:', 'allintitle:', 'allinurl:', 'filetype:', 'ext:', 'related:', 'OR', 'AND', '-', '"']
+    is_advanced = any(op in query for op in advanced_operators)
     
-    # 1. Check if the query looks like a domain
-    if "." in query and " " not in query:
+    if is_advanced:
+        final_query = query
+        print(f"Advanced query detected: {final_query}")
+    else:
+        # If simple query, enforce exact match for better consistency
+        final_query = f'"{query}"'
+        print(f"Simple query, applying exact match: {final_query}")
+    
+    # 1. Check if the query looks like a domain (Only if simple)
+    if not is_advanced and "." in query and " " not in query:
         print(f"Checking Whois for: {query}")
         whois_results = perform_whois_lookup(query)
         results.extend(whois_results)
 
-    # 2. Check if the query looks like a username (no spaces)
-    if " " not in query and "." not in query:
+    # 2. Check if the query looks like a username (Only if simple)
+    if not is_advanced and " " not in query and "." not in query:
         print(f"Checking username: {query}")
         social_results = check_social_media(query)
         results.extend(social_results)
     
     # 3. Perform General Search
-    print(f"Searching Web for: {quoted_query}")
+    print(f"Searching Web for: {final_query}")
     num_results = int(depth) * 5 
-    # Use quoted query for exact match
-    google_results = perform_google_search(quoted_query, num_results)
+    google_results = perform_google_search(final_query, num_results)
     for res in google_results:
         res['type'] = categorize_url(res['link'])
         results.append(res)
 
     # 4. Perform Targeted Social Search (Search Engine Dorking)
-    # This finds profiles even if the username check failed or if it's a full name
-    print(f"Searching Social Media for: {quoted_query}")
-    
-    # Split into groups to ensure diversity in results and better coverage
-    # We format the dork with the quoted query
-    social_dorks = [
-        f'site:linkedin.com {quoted_query}',
-        f'site:facebook.com OR site:instagram.com {quoted_query}',
-        f'site:twitter.com OR site:x.com OR site:tiktok.com OR site:youtube.com {quoted_query}',
-        f'site:pinterest.com OR site:reddit.com OR site:t.me {quoted_query}',
-        f'site:github.com OR site:gitlab.com OR site:stackoverflow.com {quoted_query}', # Dev sites
-        f'site:pastebin.com OR site:ghostbin.com OR intitle:"index of" {quoted_query}' # Leaks/Files
-    ]
+    # Only run automated dorks if the user hasn't provided a specific advanced query.
+    if not is_advanced:
+        print(f"Searching Social Media for: {final_query}")
+        
+        # Split into groups to ensure diversity in results and better coverage
+        social_dorks = [
+            f'site:linkedin.com {final_query}',
+            f'site:facebook.com OR site:instagram.com {final_query}',
+            f'site:twitter.com OR site:x.com OR site:tiktok.com OR site:youtube.com {final_query}',
+            f'site:pinterest.com OR site:reddit.com OR site:t.me {final_query}',
+            f'site:github.com OR site:gitlab.com OR site:stackoverflow.com {final_query}', # Dev sites
+            f'site:pastebin.com OR site:ghostbin.com OR intitle:"index of" {final_query}' # Leaks/Files
+        ]
 
-    for dork in social_dorks:
-        # Search for each group
-        social_search_results = perform_google_search(dork, 10)
-        for res in social_search_results:
-            res['type'] = categorize_url(res['link'])
-            # Avoid duplicates
+        for dork in social_dorks:
+            # Search for each group
+            social_search_results = perform_google_search(dork, 10)
+            for res in social_search_results:
+                res['type'] = categorize_url(res['link'])
+                # Avoid duplicates
+                if not any(r['link'] == res['link'] for r in results):
+                    results.append(res)
+
+    # 5. Perform Document/File Search (Only if not advanced)
+    if not is_advanced:
+        print(f"Searching Documents for: {final_query}")
+        doc_dork = f'filetype:pdf OR filetype:docx OR filetype:xlsx OR filetype:pptx {final_query}'
+        doc_results = perform_google_search(doc_dork, 5)
+        for res in doc_results:
+            res['type'] = "Documents"
+            res['image'] = "https://cdn-icons-png.flaticon.com/512/337/337946.png" # Document icon
             if not any(r['link'] == res['link'] for r in results):
                 results.append(res)
-
-    # 5. Perform Document/File Search
-    print(f"Searching Documents for: {query}")
-    doc_dork = f'filetype:pdf OR filetype:docx OR filetype:xlsx OR filetype:pptx "{query}"'
-    doc_results = perform_google_search(doc_dork, 5)
-    for res in doc_results:
-        res['type'] = "Documents"
         res['image'] = "https://cdn-icons-png.flaticon.com/512/337/337946.png" # Document icon
         if not any(r['link'] == res['link'] for r in results):
             results.append(res)
