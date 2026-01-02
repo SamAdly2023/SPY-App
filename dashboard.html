@@ -413,7 +413,11 @@ function renderGraph(data) {
                 title: `<b>${result.title}</b><br>${result.link}<br>Type: ${result.type}`,
                 size: 20,
                 borderWidth: 2,
-                color: { border: color, background: "#1e1e1e" }
+                color: { border: color, background: "#1e1e1e" },
+                // Store raw data for popup
+                rawTitle: result.title,
+                rawLink: result.link,
+                rawType: result.type
             });
             
             // Edge from Type to Result
@@ -443,25 +447,9 @@ function renderGraph(data) {
             const nodeId = params.nodes[0];
             const node = nodes.get(nodeId);
             
-            // Check if it's a result node (has a link in title or custom data)
-            // Our result nodes have titles like "<b>Title</b><br>Link<br>Type: ..."
-            // We can parse the title or better yet, store data in the node object itself.
-            // Let's check if the node has a 'title' property that contains HTML
-            
-            if (node.title && node.title.includes("<br>")) {
-                // Extract info from title HTML or use a cleaner way if we stored data
-                // Since we didn't store raw data in the node, let's parse the title HTML
-                // Format: <b>Title</b><br>Link<br>Type: Type
-                
-                const tempDiv = document.createElement("div");
-                tempDiv.innerHTML = node.title;
-                const title = tempDiv.querySelector("b") ? tempDiv.querySelector("b").innerText : "Result";
-                // The link is the text after the first <br>
-                const textContent = tempDiv.innerText;
-                const lines = textContent.split("\n");
-                const link = lines[1] || ""; 
-                
-                showPopup(params.event.srcEvent.clientX, params.event.srcEvent.clientY, title, link);
+            // Check if it's a result node by checking for our custom property
+            if (node.rawLink) {
+                showPopup(params.event.srcEvent.clientX, params.event.srcEvent.clientY, node.rawTitle, node.rawLink);
             }
         } else {
             hidePopup();
@@ -489,12 +477,17 @@ function showPopup(x, y, title, link) {
         document.body.appendChild(popup);
     }
     
+    // Escape single quotes for the inline onclick handlers
+    const safeLink = link.replace(/'/g, "\\'");
+    
     popup.innerHTML = `
         <div style="margin-bottom: 10px; font-weight: bold; color: #ffc107;">${title}</div>
-        <div style="margin-bottom: 10px; font-size: 12px; word-break: break-all; color: #6cf;">${link}</div>
+        <div style="margin-bottom: 10px; font-size: 12px; word-break: break-all;">
+            <a href="${link}" target="_blank" style="color: #6cf; text-decoration: none; border-bottom: 1px dotted #6cf;">${link}</a>
+        </div>
         <div style="display: flex; gap: 10px;">
-            <button onclick="window.open('${link}', '_blank')" class="btn btn-sm btn-primary" style="font-size: 12px;">Open</button>
-            <button onclick="navigator.clipboard.writeText('${link}'); this.innerText='Copied!'" class="btn btn-sm btn-outline-light" style="font-size: 12px;">Copy</button>
+            <button onclick="window.open('${safeLink}', '_blank')" class="btn btn-sm btn-primary" style="font-size: 12px;">Open</button>
+            <button onclick="navigator.clipboard.writeText('${safeLink}'); this.innerText='Copied!'" class="btn btn-sm btn-outline-light" style="font-size: 12px;">Copy</button>
             <button onclick="document.getElementById('graphPopup').style.display='none'" class="btn btn-sm btn-secondary" style="font-size: 12px;">Close</button>
         </div>
     `;
