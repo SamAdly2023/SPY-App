@@ -194,18 +194,11 @@ def history_api():
 @app.route('/search', methods=['POST'])
 @login_required
 def search():
-    query = request.form.get('query')
-    level = request.form.get('level', 'surface')
-    
-    # Define costs and depths based on level
-    costs = {'surface': 1, 'deep': 3, 'extreme': 5}
-    depths = {'surface': 2, 'deep': 6, 'extreme': 10}
-    
-    cost = costs.get(level, 1)
-    depth = depths.get(level, 2)
-
-    if current_user.credits < cost:
+    if current_user.credits <= 0:
         return jsonify({"error": "Insufficient credits"}), 403
+
+    query = request.form.get('query')
+    depth = request.form.get('depth', 2)
     
     if not query:
         return jsonify([])
@@ -213,7 +206,7 @@ def search():
     results = osint_modules.run_osint_scan(query, depth)
     
     db.add_history(current_user.id, query, len(results))
-    db.update_credits(current_user.id, -cost) 
+    db.update_credits(current_user.id, -1) # Deduct 1 credit per search
     
     return jsonify(results)
 
