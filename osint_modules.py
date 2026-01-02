@@ -202,7 +202,9 @@ def run_osint_scan(query, depth):
         f'site:linkedin.com "{query}"',
         f'site:facebook.com OR site:instagram.com "{query}"',
         f'site:twitter.com OR site:x.com OR site:tiktok.com OR site:youtube.com "{query}"',
-        f'site:pinterest.com OR site:reddit.com OR site:t.me "{query}"'
+        f'site:pinterest.com OR site:reddit.com OR site:t.me "{query}"',
+        f'site:github.com OR site:gitlab.com OR site:stackoverflow.com "{query}"', # Dev sites
+        f'site:pastebin.com OR site:ghostbin.com OR intitle:"index of" "{query}"' # Leaks/Files
     ]
 
     for dork in social_dorks:

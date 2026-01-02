@@ -198,9 +198,17 @@
                     .gsc-overflow-hidden {
                         overflow: auto !important;
                     }
+                    /* Hide the search box in the Google tab since we automate it */
+                    .gsc-search-box {
+                        display: none !important;
+                    }
+                    /* Placeholder text color for main search input */
+                    #queryInput::placeholder {
+                        color: rgba(255, 255, 255, 0.7) !important;
+                    }
                 </style>
                 <script async src="https://cse.google.com/cse.js?cx=452d685a5b79d4c2e"></script>
-                <div class="gcse-search" data-linkTarget="_blank"></div>
+                <div class="gcse-searchresults-only" data-gname="osintSearch" data-linkTarget="_blank"></div>
             </div>
         </div>
     </div>
@@ -247,6 +255,14 @@ document.getElementById("searchForm").onsubmit = async function(e){
         
         renderGraph(data);
         renderList(data);
+        
+        // Trigger Google Custom Search automatically
+        if (window.google && google.search && google.search.cse && google.search.cse.element) {
+            const element = google.search.cse.element.getElement('osintSearch');
+            if (element) {
+                element.execute(query);
+            }
+        }
         
     } catch (error) {
         console.error("Error:", error);
