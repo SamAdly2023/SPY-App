@@ -3,12 +3,22 @@
 {% block content %}
 <div class="container">
     <div class="card-custom">
-        <h2>Privacy Policy</h2>
-        <p>Your privacy is important to us.</p>
-        <p>1. We collect basic profile information from Google (Name, Email, Picture).</p>
-        <p>2. We store your search history for your convenience.</p>
-        <p>3. We do not share your data with third parties.</p>
-        <!-- Add more privacy info -->
+        <h2 class="mb-4 text-uppercase"><i class="fa-solid fa-shield-halved me-2"></i> Privacy Policy</h2>
+        <div class="text-muted">
+            <p>Your privacy is critically important to us. This policy outlines how we handle your data.</p>
+            
+            <h5 class="text-white mt-4" style="font-family: 'Orbitron', sans-serif;">1. Data Collection</h5>
+            <p>We collect basic profile information provided by Google OAuth (Name, Email, Profile Picture) to create your account.</p>
+            
+            <h5 class="text-white mt-4" style="font-family: 'Orbitron', sans-serif;">2. Search History</h5>
+            <p>We store your search queries and results history to allow you to review past investigations. This data is private to your account.</p>
+            
+            <h5 class="text-white mt-4" style="font-family: 'Orbitron', sans-serif;">3. Data Sharing</h5>
+            <p>We do not share, sell, or rent your personal data to third parties. Your OSINT investigations are confidential.</p>
+            
+            <h5 class="text-white mt-4" style="font-family: 'Orbitron', sans-serif;">4. Security</h5>
+            <p>We employ industry-standard security measures to protect your data. However, no method of transmission over the Internet is 100% secure.</p>
+        </div>
     </div>
 </div>
 {% endblock %}
