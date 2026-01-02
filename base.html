@@ -9,13 +9,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #ff00cc, #3333ff);
-            --secondary-gradient: linear-gradient(135deg, #00d2ff, #3a7bd5);
-            --bg-gradient: linear-gradient(to right, #0f0c29, #302b63, #24243e);
-            --glass-bg: rgba(255, 255, 255, 0.05);
+            --primary-gradient: linear-gradient(135deg, #0061ff, #60efff); /* Professional Blue-Cyan */
+            --secondary-gradient: linear-gradient(135deg, #363795, #005c97); /* Deep Blue */
+            --bg-gradient: linear-gradient(to right, #141e30, #243b55); /* Dark Slate */
+            --glass-bg: rgba(20, 30, 48, 0.6);
             --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-            --text-color: #ffffff;
-            --text-muted: #b0b0b0;
+            --text-color: #e0e6ed;
+            --text-muted: #94a3b8;
             --sidebar-width: 260px;
         }
 
@@ -39,13 +39,13 @@
             position: fixed;
             top: 0;
             left: 0;
-            background: rgba(15, 12, 41, 0.8);
+            background: rgba(10, 15, 25, 0.85);
             backdrop-filter: blur(15px);
             border-right: var(--glass-border);
             padding-top: 20px;
             transition: 0.3s;
             z-index: 1000;
-            box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+            box-shadow: 5px 0 15px rgba(0,0,0,0.2);
         }
         
         .sidebar .brand {
@@ -80,15 +80,15 @@
         .sidebar a:hover {
             color: #fff;
             background: rgba(255,255,255,0.05);
-            border-left: 3px solid #ff00cc;
-            box-shadow: inset 10px 0 20px -10px rgba(255, 0, 204, 0.3);
+            border-left: 3px solid #0061ff;
+            box-shadow: inset 10px 0 20px -10px rgba(0, 97, 255, 0.3);
         }
         
         .sidebar a.active {
             color: #fff;
-            background: linear-gradient(90deg, rgba(255,0,204,0.15), transparent);
-            border-left: 3px solid #ff00cc;
-            text-shadow: 0 0 10px rgba(255,0,204,0.5);
+            background: linear-gradient(90deg, rgba(0, 97, 255, 0.15), transparent);
+            border-left: 3px solid #0061ff;
+            text-shadow: 0 0 10px rgba(0, 97, 255, 0.5);
         }
         
         .sidebar .user-info {
@@ -143,28 +143,33 @@
             font-weight: 600;
             letter-spacing: 0.5px;
             transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(255, 0, 204, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 97, 255, 0.3);
         }
         
         .btn-primary-custom:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 0, 204, 0.5);
+            box-shadow: 0 6px 20px rgba(0, 97, 255, 0.5);
             color: white;
         }
 
         .form-control, .form-select {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: #fff;
             border-radius: 8px;
             padding: 12px;
         }
         
         .form-control:focus, .form-select:focus {
-            background: rgba(0,0,0,0.5);
-            border-color: #3333ff;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #0061ff;
             color: #fff;
-            box-shadow: 0 0 0 0.25rem rgba(51, 51, 255, 0.25);
+            box-shadow: 0 0 0 0.25rem rgba(0, 97, 255, 0.25);
+        }
+        
+        option {
+            background: #141e30;
+            color: #fff;
         }
 
         /* Scrollbar */
@@ -175,11 +180,11 @@
             background: #0f0c29; 
         }
         ::-webkit-scrollbar-thumb {
-            background: #3333ff; 
+            background: #0061ff; 
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #ff00cc; 
+            background: #005c97; 
         }
 
         /* Responsive */

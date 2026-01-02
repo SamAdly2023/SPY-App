@@ -22,7 +22,7 @@
     }
     .tooltip-custom { 
         position: absolute; 
-        background: rgba(15, 12, 41, 0.95); 
+        background: rgba(15, 20, 35, 0.95); 
         color: #fff; 
         padding: 15px; 
         border-radius: 12px; 
@@ -30,8 +30,8 @@
         font-size: 14px; 
         display: none; 
         z-index: 1000; 
-        box-shadow: 0 0 20px rgba(51, 51, 255, 0.3);
-        border: 1px solid #3333ff;
+        box-shadow: 0 0 20px rgba(0, 97, 255, 0.3);
+        border: 1px solid #0061ff;
         backdrop-filter: blur(5px);
     }
     .result-card { 
@@ -47,22 +47,22 @@
     }
     .result-card:hover {
         background: rgba(255,255,255,0.07);
-        border-color: rgba(51, 51, 255, 0.3);
+        border-color: rgba(0, 97, 255, 0.3);
     }
-    .result-card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #3333ff; }
+    .result-card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #0061ff; }
     .result-card .info { flex: 1; }
-    .result-card .info .title { font-weight: bold; color: #ff00cc; font-family: "Orbitron", sans-serif; letter-spacing: 0.5px; }
-    .result-card .info .link { font-size: 12px; color: #00d2ff; word-break: break-all; text-decoration: none; }
+    .result-card .info .title { font-weight: bold; color: #60efff; font-family: "Orbitron", sans-serif; letter-spacing: 0.5px; }
+    .result-card .info .link { font-size: 12px; color: #0061ff; word-break: break-all; text-decoration: none; }
     .result-card .info .link:hover { text-decoration: underline; }
-    .result-card .info .type { font-size: 11px; color: #fff; background: linear-gradient(45deg, #3333ff, #00d2ff); padding: 3px 8px; border-radius: 20px; margin-top: 6px; display: inline-block; font-weight: bold; }
+    .result-card .info .type { font-size: 11px; color: #fff; background: linear-gradient(45deg, #0061ff, #00d2ff); padding: 3px 8px; border-radius: 20px; margin-top: 6px; display: inline-block; font-weight: bold; }
     
     .nav-tabs { border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .nav-link { color: #b0b0b0; border: none; font-family: "Orbitron", sans-serif; letter-spacing: 1px; }
+    .nav-link { color: #94a3b8; border: none; font-family: "Orbitron", sans-serif; letter-spacing: 1px; }
     .nav-link:hover { color: #fff; }
     .nav-link.active { 
         color: #fff !important; 
         background: transparent !important; 
-        border-bottom: 3px solid #ff00cc !important; 
+        border-bottom: 3px solid #0061ff !important; 
         font-weight: bold;
     }
 </style>
@@ -188,10 +188,10 @@ function renderGraph(data) {
     let nodes = new vis.DataSet([{ 
         id: 0, 
         label: document.getElementById("queryInput").value, 
-        color: { background: "#ff00cc", border: "#fff" }, 
+        color: { background: "#0061ff", border: "#fff" }, 
         size: 40,
         font: { color: "#fff", size: 16, face: "Orbitron" },
-        shadow: { enabled: true, color: "rgba(255,0,204,0.5)", size: 10 }
+        shadow: { enabled: true, color: "rgba(0, 97, 255, 0.5)", size: 10 }
     }]);
     let edges = new vis.DataSet([]);
 
@@ -204,7 +204,7 @@ function renderGraph(data) {
             shape: "dot", 
             color: { background: "#00d2ff", border: "#fff" },
             size: 20,
-            font: { color: "#b0b0b0", size: 12 }
+            font: { color: "#94a3b8", size: 12 }
         });
         edges.add({ from: 0, to: id, color: { color: "rgba(255,255,255,0.2)" } });
     });
