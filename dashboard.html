@@ -139,8 +139,68 @@
         <div class="tab-pane fade" id="google" role="tabpanel">
             <div class="card-custom">
                 <h4 class="mb-3"><i class="fa-brands fa-google"></i> Google Custom Search</h4>
+                <!-- Custom CSS to style Google CSE for dark mode and fix layout -->
+                <style>
+                    .gsc-control-cse {
+                        background-color: transparent !important;
+                        border: none !important;
+                        padding: 0 !important;
+                    }
+                    .gsc-search-button-v2 {
+                        background-color: #0061ff !important;
+                        border-radius: 5px !important;
+                    }
+                    .gsc-input-box {
+                        background: rgba(255,255,255,0.1) !important;
+                        border: 1px solid rgba(255,255,255,0.2) !important;
+                        border-radius: 5px !important;
+                    }
+                    .gsc-input {
+                        background: transparent !important;
+                        color: #fff !important;
+                        padding-right: 0 !important;
+                    }
+                    .gs-title {
+                        text-decoration: none !important;
+                    }
+                    .gs-title a {
+                        color: #60efff !important;
+                        font-weight: bold !important;
+                    }
+                    .gs-snippet {
+                        color: #ccc !important;
+                    }
+                    .gsc-url-top, .gsc-url-bottom {
+                        color: #28a745 !important;
+                    }
+                    .gsc-webResult.gsc-result {
+                        background-color: transparent !important;
+                        border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+                        padding: 15px 0 !important;
+                    }
+                    .gsc-results-wrapper-overlay {
+                        position: static !important;
+                        width: 100% !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        border: none !important;
+                        height: auto !important;
+                        top: auto !important;
+                        left: auto !important;
+                        z-index: auto !important;
+                    }
+                    .gsc-modal-background-image {
+                        display: none !important;
+                    }
+                    .gsc-results-close-btn {
+                        display: none !important;
+                    }
+                    .gsc-overflow-hidden {
+                        overflow: auto !important;
+                    }
+                </style>
                 <script async src="https://cse.google.com/cse.js?cx=452d685a5b79d4c2e"></script>
-                <div class="gcse-search"></div>
+                <div class="gcse-search" data-linkTarget="_blank"></div>
             </div>
         </div>
     </div>

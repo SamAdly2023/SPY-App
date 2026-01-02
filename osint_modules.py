@@ -195,13 +195,24 @@ def run_osint_scan(query, depth):
     # 4. Perform Targeted Social Search (Search Engine Dorking)
     # This finds profiles even if the username check failed or if it's a full name
     print(f"Searching Social Media for: {query}")
-    social_dork = f'site:linkedin.com OR site:facebook.com OR site:twitter.com OR site:instagram.com OR site:tiktok.com OR site:youtube.com "{query}"'
-    social_search_results = perform_google_search(social_dork, 10)
-    for res in social_search_results:
-        res['type'] = categorize_url(res['link'])
-        # Avoid duplicates
-        if not any(r['link'] == res['link'] for r in results):
-            results.append(res)
+    
+    # Split into groups to ensure diversity in results and better coverage
+    # We format the dork with the query
+    social_dorks = [
+        f'site:linkedin.com "{query}"',
+        f'site:facebook.com OR site:instagram.com "{query}"',
+        f'site:twitter.com OR site:x.com OR site:tiktok.com OR site:youtube.com "{query}"',
+        f'site:pinterest.com OR site:reddit.com OR site:t.me "{query}"'
+    ]
+
+    for dork in social_dorks:
+        # Search for each group
+        social_search_results = perform_google_search(dork, 10)
+        for res in social_search_results:
+            res['type'] = categorize_url(res['link'])
+            # Avoid duplicates
+            if not any(r['link'] == res['link'] for r in results):
+                results.append(res)
 
     # 5. Perform Document/File Search
     print(f"Searching Documents for: {query}")
